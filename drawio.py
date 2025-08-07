@@ -16,14 +16,13 @@ class MxItem:
         fileParent:typing.Optional["MxItem"],
         xmlTag:lxml.etree.Element):
         """ """
-        self._xmlTag:typing.Optional["MxItem"]=None
-        self._fileChildren=None
-        self._parent=None
+        self._fileChildren:typing.List["MxItem"]=[]
+        self._parent:typing.Optional["MxItem"]=None
         self._children:typing.List["MxItem"]=[]
-        self._root=None
-        self._fileRoot=None
+        self._root:"MxItem"=self
+        self._fileRoot:typing.Optional["MxItem"]=None
         self.fileParent:typing.Optional["MxItem"]=fileParent # the parent in the xml hierarchy # noqa: E501 # pylint: disable=line-too-long
-        self.xmlTag:lxml.etree.Etree=xmlTag
+        self._xmlTag:lxml.etree.Etree=xmlTag
 
     @property
     def mxType(self):
@@ -43,7 +42,7 @@ class MxItem:
         """
         the unique id of this item
         """
-        return self.id
+        return self.mxId
 
     @property
     def name(self):
@@ -73,7 +72,7 @@ class MxItem:
         return self._fileRoot
 
     @property
-    def fileChildren(self):
+    def fileChildren(self)->typing.Iterable["MxItem"]:
         """
         the children in the xml hierarchy
         """
@@ -90,7 +89,7 @@ class MxItem:
             p=self.parent
             if p is not None:
                 self._root=p.root
-        return self._root
+        return self._root # type: ignore
 
     @property
     def parent(self):
@@ -108,7 +107,7 @@ class MxItem:
         return self._parent
 
     @property
-    def children(self):
+    def children(self)->typing.Iterable["MxItem"]:
         """
         this is the children in terms of the logical diagram connections,
         as opposed to the children in the xml hierarchy
@@ -117,11 +116,14 @@ class MxItem:
             return self.fileChildren
         return self._children
 
-    def __iter__(self):
-        return self.children.__iter__()
+    def __iter__(self)->typing.Iterable["MxItem"]:
+        return iter(self.children)
 
-    def __getitem__(self,idx):
-        return self.children[idx]
+    def __getitem__(self,
+        idx:typing.Union[int,slice]
+        )->typing.Union["MxItem",typing.Iterable["MxItem"]]:
+        _=self.children # force load
+        return self._children[idx]
 
     def walkFileTree(self)->typing.Generator["MxItem",None,None]:
         """
